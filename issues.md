@@ -1,6 +1,6 @@
 # Issues found in attendance_tracker.py
 
-Line numbers refer to the original file. Severity is from the Bandit report; Pylint and Flake8 do not rate severity, so I ranked those myself. Results: Bandit 8 issues to 0, Flake8 25 to 0, Pylint 4.55/10 to 9.88/10.
+Line numbers refer to the original file. Severity is from the Bandit report; Pylint and Flake8 do not rate severity, so I ranked those myself. Results: Bandit 8 issues to 0, Flake8 25 to 0, Pylint 4.55/10 to 10.00/10.
 
 | Issue | Type | Line(s) | Description | Fix Approach |
 |-------|------|---------|-------------|--------------|
