@@ -1,15 +1,16 @@
 import os
 import csv
+import glob
 import ssl
 import json
-import subprocess
+import tarfile
 from datetime import datetime
 import requests
 
 # Global attendance register
 students = {}
 ERP_URL = "https://erp.college.example/api/attendance"
-ERP_API_KEY = "erp-live-4f9c2a7d81"
+ERP_API_KEY = os.environ.get("ERP_API_KEY", "")
 MIN_ATTENDANCE = 75
 
 def addStudent(roll_no, name, section="A"):
@@ -46,31 +47,38 @@ def latestDate(roll_no):
     dates = [d for d in [r[0] for r in students[roll_no]["records"]]]
     return max(dates)
 
+def safeCell(value):
+    text = str(value)
+    if text.startswith(("=", "+", "-", "@")):
+        return "'" + text
+    return text
+
 def exportCsv(path="attendance.csv"):
-    f = open(path, "w")
-    writer = csv.writer(f)
-    writer.writerow(["roll_no", "name", "percentage"])
-    for roll_no in students:
-        writer.writerow([roll_no, students[roll_no]["name"], attendancePercentage(roll_no)])
-    f.close()
+    with open(path, "w", encoding="utf-8", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["roll_no", "name", "percentage"])
+        for roll_no in students:
+            writer.writerow([safeCell(roll_no), safeCell(students[roll_no]["name"]), attendancePercentage(roll_no)])
     return path
 
 def syncToErp(roll_no):
     payload = {"roll_no": roll_no, "pct": attendancePercentage(roll_no)}
-    response = requests.post(ERP_URL, json=payload, headers={"X-API-Key": ERP_API_KEY}, verify=False)
+    response = requests.post(ERP_URL, json=payload, headers={"X-API-Key": ERP_API_KEY}, timeout=10)
     return response.status_code
 
 def backupReports():
-    subprocess.Popen("tar -czf reports_backup.tgz *.csv", shell=True)
+    with tarfile.open("reports_backup.tgz", "w:gz") as tar:
+        for report in glob.glob("*.csv"):
+            tar.add(report)
 
-def legacyChannel(version=ssl.PROTOCOL_TLSv1):
-    return ssl.SSLContext(version)
+def legacyChannel():
+    return ssl.create_default_context()
 
 def runJob(command, shell=False):
     return {"command": command, "shell": shell}
 
 def scheduleReminders():
-    return runJob("send_sms --shortage", shell=True)
+    return runJob("send_sms --shortage", shell=False)
 
 def main():
     addStudent("R01", "Aditi")
