@@ -2,3 +2,4 @@ __pycache__/
 .venv/
 attendance.csv
 reports_backup.tgz
+venv/
